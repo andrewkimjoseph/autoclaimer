@@ -4,8 +4,8 @@ A small Node + TypeScript cron job that claims [GoodDollar](https://gooddollar.o
 account via **direct EOA transactions** on the **Fuse** and **XDC** networks.
 
 On each run it iterates both chains, checks eligibility, and submits a `claim()` transaction where
-the account is eligible. It is designed to run once per invocation and exit, which fits a scheduled
-GitHub Actions workflow.
+the account is eligible. It is designed to run once per invocation and exit — suitable for Val Town
+cron, GitHub Actions, or any other scheduler.
 
 ## How it works
 
@@ -54,7 +54,38 @@ This sends **direct transactions**, so the EOA pays its own gas. Keep a small ba
 **FUSE** and native **XDC** in the account. If the balance is below `MIN_GAS_BALANCE`, the claim for
 that chain is skipped with a warning rather than failing the whole run.
 
-## Deploy with GitHub Actions
+## Deploy on Val Town (recommended)
+
+[Val Town](https://www.val.town) runs TypeScript on a schedule with reliable cron timing and a free
+tier (daily jobs are well within limits).
+
+### Step-by-step
+
+1. Go to [val.town](https://www.val.town) and sign in.
+2. Click **New val** (or open your dashboard and create one). Name it something like `autoclaimer`.
+3. In the val editor, click **+** (top right) → **CRON**.
+4. Open [`valtown/claim-ubi.cron.ts`](valtown/claim-ubi.cron.ts) from this repo and **paste the full
+   contents** into the new cron file. Delete any placeholder code first.
+5. In the val's **left sidebar**, open **Environment variables** and add:
+   - `PRIVATE_KEY` — your EOA private key (with or without `0x`). **Required.**
+   - `FUSE_RPC_URL` — optional RPC override for Fuse.
+   - `XDC_RPC_URL` — optional RPC override for XDC.
+   - `MIN_GAS_BALANCE` — optional, default `0.01`.
+6. Click **Run** to test. Check the **Logs** tab — you should see output for Fuse and XDC (claimed,
+   already claimed, skipped, etc.).
+7. Click the **Cron** trigger on the file and set the schedule:
+   - Cron expression: `0 12 * * *` (daily at **12:00 UTC** / 3:00 PM UTC+3)
+   - Or use a simple interval if you prefer.
+8. Save. The val will run automatically on that schedule.
+
+### Notes
+
+- Val Town uses Deno; the cron file imports `viem` via `npm:viem@2` — no install step needed.
+- Environment variables are private to your val (set in the sidebar, not in code).
+- Free plan crons can run at most once every 15 minutes; a daily schedule is fine.
+- If you also use GitHub Actions, disable or delete `.github/workflows/claim.yml` to avoid double-claiming.
+
+## Deploy with GitHub Actions (alternative)
 
 The job runs on a schedule via [`.github/workflows/claim.yml`](.github/workflows/claim.yml) (daily at
 `0 12 * * *` UTC, plus a manual `workflow_dispatch` trigger).
