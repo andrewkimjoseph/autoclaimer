@@ -16,7 +16,7 @@ For each chain (Fuse, then XDC) the job:
 3. Reads `hasClaimed(root)` and `checkEntitlement(root)` from the UBIScheme contract.
 4. Skips if already claimed today or if there is no entitlement.
 5. Verifies the EOA holds enough native gas (FUSE / XDC).
-6. Sends a direct `claim()` transaction (with a `THECLAIMER` attribution calldata suffix) and waits
+6. Sends a direct `claim()` transaction (with an `ANDI` attribution calldata suffix) and waits
    for the receipt.
 
 A failure on one chain does not block the other; results are summarized at the end.
