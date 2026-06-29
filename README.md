@@ -4,8 +4,8 @@ A small Node + TypeScript cron job that claims [GoodDollar](https://gooddollar.o
 account via **direct EOA transactions** on the **Fuse** and **XDC** networks.
 
 On each run it iterates both chains, checks eligibility, and submits a `claim()` transaction where
-the account is eligible. It is designed to run once per invocation and exit, which fits Render's
-native Cron Job model.
+the account is eligible. It is designed to run once per invocation and exit, which fits a scheduled
+GitHub Actions workflow.
 
 ## How it works
 
@@ -54,12 +54,19 @@ This sends **direct transactions**, so the EOA pays its own gas. Keep a small ba
 **FUSE** and native **XDC** in the account. If the balance is below `MIN_GAS_BALANCE`, the claim for
 that chain is skipped with a warning rather than failing the whole run.
 
-## Deploy on Render
+## Deploy with GitHub Actions
+
+The job runs on a schedule via [`.github/workflows/claim.yml`](.github/workflows/claim.yml) (daily at
+`0 12 * * *` UTC, plus a manual `workflow_dispatch` trigger).
 
 1. Push this repo to GitHub.
-2. In Render, create a new **Cron Job** from the repo (or use the included `render.yaml` as a Blueprint).
-3. Settings (already encoded in `render.yaml`):
-   - Schedule: `0 12 * * *` (daily at 12:00 UTC)
-   - Build command: `npm install && npm run build`
-   - Command: `node dist/index.js`
-4. Add `PRIVATE_KEY` (and any optional RPC overrides) as environment variables / secrets.
+2. Add the EOA key as an Actions **secret**: repo Settings -> Secrets and variables -> Actions ->
+   New repository secret -> `PRIVATE_KEY`.
+3. Optionally add `FUSE_RPC_URL` / `XDC_RPC_URL` as secrets, and `MIN_GAS_BALANCE` as a repository
+   **variable**, if you want to override the defaults.
+4. Trigger a test run from the **Actions** tab (Run workflow) to confirm it works; after that it runs
+   automatically every day at 12:00 UTC.
+
+Notes:
+- Scheduled runs may be delayed a few minutes during peak load, which is fine for a daily claim.
+- GitHub disables scheduled workflows after 60 days of repo inactivity; any push re-enables them.

@@ -1,0 +1,35 @@
+name: Claim UBI
+
+on:
+  schedule:
+    # Runs daily at 12:00 UTC. Scheduled runs may be delayed during peak load.
+    - cron: "0 12 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  claim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Claim UBI on Fuse and XDC
+        run: npm start
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          FUSE_RPC_URL: ${{ secrets.FUSE_RPC_URL }}
+          XDC_RPC_URL: ${{ secrets.XDC_RPC_URL }}
+          MIN_GAS_BALANCE: ${{ vars.MIN_GAS_BALANCE }}
