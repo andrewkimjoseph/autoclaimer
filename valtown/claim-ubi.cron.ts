@@ -25,21 +25,7 @@ import {
   type Hex,
 } from "npm:viem@2.26.2";
 import { privateKeyToAccount } from "npm:viem@2.26.2/accounts";
-import { defineChain } from "npm:viem@2.26.2/chains";
-
-const fuse = defineChain({
-  id: 122,
-  name: "Fuse",
-  nativeCurrency: { decimals: 18, name: "Fuse Token", symbol: "FUSE" },
-  rpcUrls: { default: { http: ["https://rpc.fuse.io"] } },
-});
-
-const xdc = defineChain({
-  id: 50,
-  name: "XDC",
-  nativeCurrency: { decimals: 18, name: "XDC", symbol: "XDC" },
-  rpcUrls: { default: { http: ["https://rpc.xdcrpc.com"] } },
-});
+import { fuse, xdc } from "npm:viem@2.26.2/chains";
 
 const identityAbi = [
   {
