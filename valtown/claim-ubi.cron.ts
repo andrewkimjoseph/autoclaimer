@@ -23,9 +23,23 @@ import {
   type Address,
   type Chain,
   type Hex,
-} from "npm:viem@2";
-import { privateKeyToAccount } from "npm:viem@2/accounts";
-import { fuse, xdc } from "npm:viem/chains";
+} from "npm:viem@2.26.2";
+import { privateKeyToAccount } from "npm:viem@2.26.2/accounts";
+import { defineChain } from "npm:viem@2.26.2/chains";
+
+const fuse = defineChain({
+  id: 122,
+  name: "Fuse",
+  nativeCurrency: { decimals: 18, name: "Fuse Token", symbol: "FUSE" },
+  rpcUrls: { default: { http: ["https://rpc.fuse.io"] } },
+});
+
+const xdc = defineChain({
+  id: 50,
+  name: "XDC",
+  nativeCurrency: { decimals: 18, name: "XDC", symbol: "XDC" },
+  rpcUrls: { default: { http: ["https://rpc.xdcrpc.com"] } },
+});
 
 const identityAbi = [
   {
@@ -88,7 +102,9 @@ type ClaimResult = {
 );
 
 function env(name: string): string | undefined {
-  return Deno.env.get(name)?.trim() || undefined;
+  const value = Deno.env.get(name) ?? process.env[name];
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : undefined;
 }
 
 function getPrivateKey(): Hex {
@@ -101,7 +117,7 @@ function getPrivateKey(): Hex {
 
 function getMinGasBalance(): bigint {
   const raw = env("MIN_GAS_BALANCE");
-  return parseEther(raw && raw.length > 0 ? raw : "0.01");
+  return parseEther(raw ?? "0.01");
 }
 
 function getChainConfigs(): ChainConfig[] {
@@ -262,22 +278,28 @@ function describe(result: ClaimResult): string {
 }
 
 export default async function (_interval: Interval) {
-  console.log(`Autoclaimer run at ${new Date().toISOString()}`);
+  try {
+    console.log(`Autoclaimer run at ${new Date().toISOString()}`);
 
-  const account = privateKeyToAccount(getPrivateKey());
-  console.log(`EOA address: ${account.address}`);
+    const account = privateKeyToAccount(getPrivateKey());
+    console.log(`EOA address: ${account.address}`);
 
-  const results: ClaimResult[] = [];
+    const results: ClaimResult[] = [];
 
-  for (const config of getChainConfigs()) {
-    console.log(`\n[${config.name}] starting...`);
-    const result = await claimOnChain(config, account);
-    results.push(result);
-    console.log(`[${config.name}] ${describe(result)}`);
-  }
+    for (const config of getChainConfigs()) {
+      console.log(`[${config.name}] starting...`);
+      const result = await claimOnChain(config, account);
+      results.push(result);
+      console.log(`[${config.name}] ${describe(result)}`);
+    }
 
-  console.log("\nSummary:");
-  for (const result of results) {
-    console.log(`  ${result.chain}: ${result.status}`);
+    console.log("Summary:");
+    for (const result of results) {
+      console.log(`  ${result.chain}: ${result.status}`);
+    }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Fatal error: ${message}`);
+    throw error;
   }
 }
